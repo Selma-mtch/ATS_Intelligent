@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+instance/
+backend/instance/
+backend/uploads/
+backend/ats_intelligent.db
+backend/faiss_index/
+backend/hf_cache/
+frontend/.venv/
