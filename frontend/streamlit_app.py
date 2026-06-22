@@ -126,8 +126,34 @@ def candidate_dashboard(user):
 
     with cv_tab:
         st.subheader("Depot de CV PDF")
-        st.file_uploader("CV au format PDF", type=["pdf"], disabled=True)
-        st.info("La route backend d'upload CV sera ajoutee avec l'etape extraction PDF.")
+        uploaded_cv = st.file_uploader("CV au format PDF", type=["pdf"])
+
+        if uploaded_cv and st.button("Analyser mon CV", use_container_width=True):
+            files = {
+                "cv": (
+                    uploaded_cv.name,
+                    uploaded_cv.getvalue(),
+                    "application/pdf",
+                )
+            }
+            status, payload = request_api("POST", "/cv/upload", files=files)
+            if status == 201:
+                st.success("CV analyse et sauvegarde.")
+                st.write(f"Texte extrait : {payload['taille_texte']} caracteres")
+                st.write("Sections trouvees :")
+                for chunk in payload["chunks"]:
+                    with st.expander(chunk["type_section"]):
+                        st.write(chunk["contenu"])
+            else:
+                st.error(payload.get("error", "Upload impossible"))
+
+        status, payload = request_api("GET", "/cv/me")
+        if status == 200 and payload.get("cv"):
+            st.divider()
+            st.subheader("CV deja enregistre")
+            for chunk in payload["cv"]["chunks"]:
+                with st.expander(chunk["type_section"]):
+                    st.write(chunk["contenu"])
 
     with offers_tab:
         st.subheader("Offres recommandees")
