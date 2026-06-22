@@ -3,6 +3,7 @@ from models import (
     Recruteur,
     STATUT_DEMANDE_APPROUVEE,
     STATUT_DEMANDE_EN_ATTENTE,
+    STATUT_DEMANDE_REFUSEE,
     User,
 )
 
@@ -38,4 +39,8 @@ class UserRepository:
             self.db.add(Recruteur(user_id=user.id, entreprise=entreprise))
         else:
             user.recruteur.entreprise = entreprise
+        return user
+
+    def reject_recruiter_request(self, user: User):
+        user.statut_demande_recruteur = STATUT_DEMANDE_REFUSEE
         return user
