@@ -22,6 +22,8 @@ def list_recruiter_requests(current_user):
                     "email": user.email,
                     "role": user.role,
                     "statut_demande_recruteur": user.statut_demande_recruteur,
+                    "entreprise_demande_recruteur": user.entreprise_demande_recruteur,
+                    "referent_rh_demande_recruteur": user.referent_rh_demande_recruteur,
                 }
                 for user in users
             ]

@@ -44,6 +44,14 @@ def migrate_sqlite_schema():
         statements.append(
             "ALTER TABLE users ADD COLUMN statut_demande_recruteur VARCHAR(30) NOT NULL DEFAULT 'aucune'"
         )
+    if "entreprise_demande_recruteur" not in columns:
+        statements.append(
+            "ALTER TABLE users ADD COLUMN entreprise_demande_recruteur VARCHAR(160)"
+        )
+    if "referent_rh_demande_recruteur" not in columns:
+        statements.append(
+            "ALTER TABLE users ADD COLUMN referent_rh_demande_recruteur VARCHAR(160)"
+        )
 
     with engine.begin() as connection:
         for statement in statements:

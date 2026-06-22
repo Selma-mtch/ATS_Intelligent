@@ -29,9 +29,14 @@ def register():
 @auth_bp.route("/request-recruiter-role", methods=["POST"])
 @login_required
 def request_recruiter_role(current_user):
+    data = request.get_json() or {}
     db = get_db()
     try:
-        user = AuthService(db).request_recruiter_role(current_user.id)
+        user = AuthService(db).request_recruiter_role(
+            current_user.id,
+            data.get("entreprise", ""),
+            data.get("referent_rh", ""),
+        )
         return jsonify({"user": user})
     except ValueError as error:
         db.rollback()
@@ -76,5 +81,7 @@ def me(current_user):
             "role": current_user.role,
             "demande_role_recruteur": current_user.demande_role_recruteur,
             "statut_demande_recruteur": current_user.statut_demande_recruteur,
+            "entreprise_demande_recruteur": current_user.entreprise_demande_recruteur,
+            "referent_rh_demande_recruteur": current_user.referent_rh_demande_recruteur,
         }
     })

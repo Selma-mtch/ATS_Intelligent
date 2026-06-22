@@ -168,8 +168,20 @@ def candidate_dashboard(user):
         status = user.get("statut_demande_recruteur", "aucune")
         if status == "aucune":
             st.write("Le compte est actuellement candidat. Une demande peut etre envoyee a l'administrateur.")
-            if st.button("Demander les droits recruteur", use_container_width=True):
-                api_status, payload = request_api("POST", "/auth/request-recruiter-role")
+            with st.form("recruiter_request_form"):
+                entreprise = st.text_input("Nom de l'entreprise")
+                referent_rh = st.text_input("Referent RH")
+                submitted = st.form_submit_button("Demander les droits recruteur", use_container_width=True)
+
+            if submitted:
+                api_status, payload = request_api(
+                    "POST",
+                    "/auth/request-recruiter-role",
+                    json={
+                        "entreprise": entreprise,
+                        "referent_rh": referent_rh,
+                    },
+                )
                 if api_status == 200:
                     set_user(payload["user"])
                     st.rerun()
@@ -177,6 +189,10 @@ def candidate_dashboard(user):
                     st.error(payload.get("error", "Demande impossible"))
         elif status == "en_attente":
             st.warning("Demande recruteur en attente de validation administrateur.")
+            if user.get("entreprise_demande_recruteur"):
+                st.write(f"Entreprise : {user['entreprise_demande_recruteur']}")
+            if user.get("referent_rh_demande_recruteur"):
+                st.write(f"Referent RH : {user['referent_rh_demande_recruteur']}")
         elif status == "refusee":
             st.error("Demande recruteur refusee.")
         else:
@@ -236,8 +252,14 @@ def admin_dashboard(user):
     for request_item in requests_list:
         with st.container(border=True):
             st.write(f"{request_item['nom']} - {request_item['email']}")
+            st.write(f"Entreprise : {request_item.get('entreprise_demande_recruteur') or 'Non renseignee'}")
+            st.write(f"Referent RH : {request_item.get('referent_rh_demande_recruteur') or 'Non renseigne'}")
             with st.form(f"grant_recruiter_{request_item['id']}"):
-                entreprise = st.text_input("Entreprise", key=f"enterprise_{request_item['id']}")
+                entreprise = st.text_input(
+                    "Entreprise",
+                    value=request_item.get("entreprise_demande_recruteur") or "",
+                    key=f"enterprise_{request_item['id']}",
+                )
                 submitted = st.form_submit_button("Donner les droits recruteur")
             if submitted:
                 api_status, api_payload = request_api(
