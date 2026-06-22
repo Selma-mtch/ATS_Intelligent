@@ -134,8 +134,34 @@ def candidate_dashboard(user):
 
     with cv_tab:
         st.subheader("Depot de CV PDF")
-        st.file_uploader("CV au format PDF", type=["pdf"], disabled=True)
-        st.info("La route backend d'upload CV sera ajoutée avec l'étape extraction PDF.")
+        uploaded_cv = st.file_uploader("CV au format PDF", type=["pdf"])
+
+        if uploaded_cv and st.button("Analyser mon CV", use_container_width=True):
+            files = {
+                "cv": (
+                    uploaded_cv.name,
+                    uploaded_cv.getvalue(),
+                    "application/pdf",
+                )
+            }
+            status, payload = request_api("POST", "/cv/upload", files=files)
+            if status == 201:
+                st.success("CV analyse et sauvegarde.")
+                st.write(f"Texte extrait : {payload['taille_texte']} caracteres")
+                st.write("Sections trouvees :")
+                for chunk in payload["chunks"]:
+                    with st.expander(chunk["type_section"]):
+                        st.write(chunk["contenu"])
+            else:
+                st.error(payload.get("error", "Upload impossible"))
+
+        status, payload = request_api("GET", "/cv/me")
+        if status == 200 and payload.get("cv"):
+            st.divider()
+            st.subheader("CV deja enregistre")
+            for chunk in payload["cv"]["chunks"]:
+                with st.expander(chunk["type_section"]):
+                    st.write(chunk["contenu"])
 
     with offers_tab:
         st.subheader("Offres recommandees")
@@ -179,12 +205,57 @@ def recruiter_dashboard(user):
 
     with offers_tab:
         st.subheader("Publier une offre")
-        with st.form("offer_preview_form"):
-            st.text_input("Titre", disabled=True)
-            st.text_area("Description", disabled=True)
-            st.text_input("Competences", disabled=True)
-            st.form_submit_button("Publier", disabled=True, use_container_width=True)
-        st.info("Les routes backend des offres seront ajoutees dans l'etape gestion des offres.")
+        with st.form("offer_form", clear_on_submit=True):
+            titre = st.text_input("Nom du poste")
+            type_contrat = st.selectbox(
+                "Type de contrat",
+                ["CDI", "CDD", "Stage", "Alternance", "Freelance", "Interim"],
+            )
+            duree_contrat = st.text_input("Duree du contrat (ex : 6 mois, indetermine)")
+            domaine = st.text_input("Domaine (ex : Data, Developpement web)")
+            competences = st.text_area("Competences requises (separees par des virgules)")
+            description_entreprise = st.text_area("Description de l'entreprise")
+            description = st.text_area("Description des missions")
+            submitted = st.form_submit_button("Publier", use_container_width=True)
+
+        if submitted:
+            status, payload = request_api(
+                "POST",
+                "/offres",
+                json={
+                    "titre": titre,
+                    "type_contrat": type_contrat,
+                    "duree_contrat": duree_contrat,
+                    "domaine": domaine,
+                    "competences": competences,
+                    "description_entreprise": description_entreprise,
+                    "description": description,
+                },
+            )
+            if status == 201:
+                st.success("Offre publiee.")
+                st.rerun()
+            else:
+                st.error(payload.get("error", "Publication impossible"))
+
+        st.divider()
+        st.subheader("Mes offres publiees")
+        status, payload = request_api("GET", "/offres/mine")
+        if status == 200:
+            offres = payload.get("offres", [])
+            if not offres:
+                st.info("Aucune offre publiee pour le moment.")
+            for offre in offres:
+                label = f"{offre['titre']} - {offre.get('type_contrat') or ''}"
+                with st.expander(label):
+                    st.write(f"**Domaine** : {offre.get('domaine') or '-'}")
+                    st.write(f"**Duree** : {offre.get('duree_contrat') or '-'}")
+                    st.write(f"**Competences** : {offre.get('competences') or '-'}")
+                    if offre.get("description_entreprise"):
+                        st.write(f"**Entreprise** : {offre['description_entreprise']}")
+                    st.write(f"**Missions** : {offre.get('description') or '-'}")
+        else:
+            st.error(payload.get("error", "Impossible de charger les offres"))
 
     with search_tab:
         st.subheader("Recherche de candidats")

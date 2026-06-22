@@ -12,7 +12,7 @@ Le but est de faire une petite plateforme ATS pour mettre en relation des candid
 - un administrateur accepte la demande ;
 - le compte passe alors en recruteur.
 
-Les parties CV, offres, matching IA et copilote sont prevues mais pas encore codees.
+La partie CV commence a etre disponible : on peut envoyer un PDF, extraire son texte et le decouper en sections. Les offres, le matching IA et le copilote ne sont pas encore branches.
 
 ## Technologies utilisees
 
@@ -90,6 +90,10 @@ GET  /auth/me
 POST /auth/request-recruiter-role
 GET  /admin/recruiter-requests
 POST /admin/users/<id>/grant-recruiter
+POST /cv/upload
+GET  /cv/me
+POST /offres
+GET  /offres/mine
 ```
 
 ## Pendant le developpement

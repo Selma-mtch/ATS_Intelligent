@@ -30,20 +30,33 @@ def migrate_sqlite_schema():
         return
 
     inspector = inspect(engine)
-    if "users" not in inspector.get_table_names():
-        return
-
-    columns = {column["name"] for column in inspector.get_columns("users")}
+    table_names = inspector.get_table_names()
     statements = []
 
-    if "demande_role_recruteur" not in columns:
-        statements.append(
-            "ALTER TABLE users ADD COLUMN demande_role_recruteur VARCHAR(10) NOT NULL DEFAULT 'non'"
-        )
-    if "statut_demande_recruteur" not in columns:
-        statements.append(
-            "ALTER TABLE users ADD COLUMN statut_demande_recruteur VARCHAR(30) NOT NULL DEFAULT 'aucune'"
-        )
+    if "users" in table_names:
+        columns = {column["name"] for column in inspector.get_columns("users")}
+        if "demande_role_recruteur" not in columns:
+            statements.append(
+                "ALTER TABLE users ADD COLUMN demande_role_recruteur VARCHAR(10) NOT NULL DEFAULT 'non'"
+            )
+        if "statut_demande_recruteur" not in columns:
+            statements.append(
+                "ALTER TABLE users ADD COLUMN statut_demande_recruteur VARCHAR(30) NOT NULL DEFAULT 'aucune'"
+            )
+
+    if "offres" in table_names:
+        offre_columns = {column["name"] for column in inspector.get_columns("offres")}
+        for column_name, ddl in (
+            ("type_contrat", "ALTER TABLE offres ADD COLUMN type_contrat VARCHAR(60)"),
+            ("duree_contrat", "ALTER TABLE offres ADD COLUMN duree_contrat VARCHAR(80)"),
+            ("domaine", "ALTER TABLE offres ADD COLUMN domaine VARCHAR(120)"),
+            ("description_entreprise", "ALTER TABLE offres ADD COLUMN description_entreprise TEXT"),
+        ):
+            if column_name not in offre_columns:
+                statements.append(ddl)
+
+    if not statements:
+        return
 
     with engine.begin() as connection:
         for statement in statements:
