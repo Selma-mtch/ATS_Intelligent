@@ -26,7 +26,15 @@ class AuthService:
         self.db.commit()
         return user_to_dict(user)
 
-    def request_recruiter_role(self, user_id: int):
+    def request_recruiter_role(self, user_id: int, entreprise: str = "", referent_rh: str = ""):
+        entreprise = (entreprise or "").strip()
+        referent_rh = (referent_rh or "").strip()
+
+        if not entreprise:
+            raise ValueError("Nom de l'entreprise requis")
+        if not referent_rh:
+            raise ValueError("Referent RH requis")
+
         user = self.users.find_by_id(user_id)
         if not user:
             raise ValueError("Utilisateur introuvable")
@@ -35,7 +43,7 @@ class AuthService:
         if user.statut_demande_recruteur == "en_attente":
             raise ValueError("Une demande recruteur est deja en attente")
 
-        self.users.mark_recruiter_request_pending(user)
+        self.users.mark_recruiter_request_pending(user, entreprise, referent_rh)
         self.db.commit()
         return user_to_dict(user)
 

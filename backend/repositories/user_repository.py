@@ -24,9 +24,11 @@ class UserRepository:
         self.db.add(Candidat(user_id=user.id))
         return user
 
-    def mark_recruiter_request_pending(self, user: User):
+    def mark_recruiter_request_pending(self, user: User, entreprise: str, referent_rh: str):
         user.demande_role_recruteur = "oui"
         user.statut_demande_recruteur = STATUT_DEMANDE_EN_ATTENTE
+        user.entreprise_demande_recruteur = entreprise
+        user.referent_rh_demande_recruteur = referent_rh
         return user
 
     def grant_recruiter_role(self, user: User, entreprise: str):

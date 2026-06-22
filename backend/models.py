@@ -28,6 +28,8 @@ class User(Base):
     role = Column(String(30), nullable=False)
     demande_role_recruteur = Column(String(10), nullable=False, default="non")
     statut_demande_recruteur = Column(String(30), nullable=False, default=STATUT_DEMANDE_AUCUNE)
+    entreprise_demande_recruteur = Column(String(160), nullable=True)
+    referent_rh_demande_recruteur = Column(String(160), nullable=True)
     created_at = Column(DateTime, default=now_utc)
 
     candidat = relationship("Candidat", back_populates="utilisateur", uselist=False, cascade="all, delete-orphan")
