@@ -9,7 +9,7 @@ API_URL = os.getenv("ATS_API_URL", "http://localhost:5001").rstrip("/")
 
 st.set_page_config(
     page_title="ATS Intelligent",
-    page_icon="ATS",
+    page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -56,6 +56,159 @@ def show_api_status():
             st.sidebar.warning("API indisponible")
     except requests.RequestException:
         st.sidebar.error("Backend Flask non joignable")
+
+
+def inject_css():
+    st.markdown(
+        """
+        <style>
+        /* Halos lumineux en fond de page */
+        .stApp {
+            background:
+                radial-gradient(900px 520px at 100% -10%, rgba(99, 102, 241, 0.14), transparent 60%),
+                radial-gradient(720px 420px at -10% 8%, rgba(139, 92, 246, 0.10), transparent 55%);
+        }
+
+        /* Conteneur principal centre, aere, avec animation d'entree */
+        @keyframes fadeInUp {
+            from {opacity: 0; transform: translateY(14px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+        .block-container {
+            padding-top: 2.5rem;
+            padding-bottom: 3rem;
+            max-width: 1080px;
+            animation: fadeInUp .5s ease both;
+        }
+
+        /* Titre principal en degrade */
+        h1 {
+            font-weight: 800;
+            letter-spacing: -0.7px;
+            background: linear-gradient(90deg, #A5B4FC 0%, #6366F1 45%, #C4B5FD 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h2, h3 {font-weight: 700; letter-spacing: -0.2px;}
+
+        /* Boutons : remplissage degrade indigo + survol anime */
+        .stButton > button,
+        .stFormSubmitButton > button,
+        .stDownloadButton > button {
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
+            transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+        }
+        .stButton > button:hover,
+        .stFormSubmitButton > button:hover,
+        .stDownloadButton > button:hover {
+            filter: brightness(1.08);
+            box-shadow: 0 8px 22px rgba(99, 102, 241, 0.45);
+            transform: translateY(-2px);
+        }
+        .stButton > button:active,
+        .stFormSubmitButton > button:active {transform: translateY(0);}
+        /* Boutons desactives : aspect neutre */
+        .stButton > button:disabled,
+        .stFormSubmitButton > button:disabled {
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.4);
+            box-shadow: none;
+        }
+
+        /* Formulaires et conteneurs en "cartes" avec survol */
+        [data-testid="stForm"],
+        [data-testid="stExpander"] {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+        }
+        [data-testid="stForm"] {padding: 1.4rem 1.4rem 0.4rem;}
+        [data-testid="stForm"]:hover,
+        [data-testid="stExpander"]:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Champs de saisie arrondis + halo au focus */
+        .stTextInput input,
+        .stTextArea textarea,
+        .stSelectbox div[data-baseweb="select"] > div {
+            border-radius: 10px !important;
+            transition: box-shadow .15s ease, border-color .15s ease;
+        }
+        .stTextInput input:focus,
+        .stTextArea textarea:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35) !important;
+        }
+
+        /* Onglets en pastilles, avec etat actif marque */
+        .stTabs [data-baseweb="tab-list"] {gap: 6px;}
+        .stTabs [data-baseweb="tab"] {
+            border-radius: 10px;
+            padding: 8px 18px;
+            font-weight: 600;
+            transition: background .15s ease, color .15s ease;
+        }
+        .stTabs [data-baseweb="tab"]:hover {background: rgba(99, 102, 241, 0.12);}
+        .stTabs [aria-selected="true"] {
+            background: rgba(99, 102, 241, 0.18);
+            color: #C7D2FE !important;
+        }
+
+        /* Alertes arrondies */
+        .stAlert {border-radius: 12px;}
+
+        /* Barre laterale avec un degrade */
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #171A23 0%, #0E1117 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Bloc d'identite dans la sidebar */
+        .ats-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 4px 16px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .ats-brand .logo {
+            font-size: 26px;
+            line-height: 1;
+            filter: drop-shadow(0 2px 6px rgba(99, 102, 241, 0.5));
+        }
+        .ats-brand .name {
+            font-weight: 800;
+            font-size: 18px;
+            background: linear-gradient(90deg, #A5B4FC, #C4B5FD);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Scrollbar discrete */
+        ::-webkit-scrollbar {width: 10px; height: 10px;}
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {background: rgba(99, 102, 241, 0.65);}
+
+        /* Interface epuree : menu et pied de page masques */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def auth_view():
@@ -253,6 +406,12 @@ def admin_dashboard(user):
 
 
 def main():
+    inject_css()
+    st.sidebar.markdown(
+        '<div class="ats-brand"><span class="logo">🎯</span>'
+        '<span class="name">ATS Intelligent</span></div>',
+        unsafe_allow_html=True,
+    )
     show_api_status()
 
     user = get_user()
