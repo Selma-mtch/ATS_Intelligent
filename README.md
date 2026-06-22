@@ -92,6 +92,8 @@ GET  /admin/recruiter-requests
 POST /admin/users/<id>/grant-recruiter
 POST /cv/upload
 GET  /cv/me
+POST /offres
+GET  /offres/mine
 ```
 
 ## Pendant le developpement

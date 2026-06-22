@@ -97,8 +97,12 @@ class Offre(Base):
     id = Column(Integer, primary_key=True)
     recruteur_id = Column(Integer, ForeignKey("recruteurs.id"), nullable=False)
     titre = Column(String(180), nullable=False)
-    description = Column(Text, nullable=False)
+    type_contrat = Column(String(60), nullable=True)
+    duree_contrat = Column(String(80), nullable=True)
+    domaine = Column(String(120), nullable=True)
     competences = Column(Text, nullable=True)
+    description_entreprise = Column(Text, nullable=True)
+    description = Column(Text, nullable=False)
     date_publication = Column(DateTime, default=now_utc)
 
     recruteur = relationship("Recruteur", back_populates="offres")
