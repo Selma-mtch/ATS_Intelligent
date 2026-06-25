@@ -125,6 +125,12 @@ def dashboard_header(user):
         st.button("Se déconnecter", on_click=logout, use_container_width=True)
 
 
+def cv_expander_label(filename, section_type):
+    if section_type == "general":
+        return f"{filename} (general)"
+    return f"{filename} - {section_type}"
+
+
 def candidate_dashboard(user):
     dashboard_header(user)
 
@@ -148,20 +154,57 @@ def candidate_dashboard(user):
             if status == 201:
                 st.success("CV analyse et sauvegarde.")
                 st.write(f"Texte extrait : {payload['taille_texte']} caracteres")
-                st.write("Sections trouvees :")
+                st.write("Extraction trouvee :")
                 for chunk in payload["chunks"]:
-                    with st.expander(chunk["type_section"]):
+                    label = cv_expander_label(payload["filename"], chunk["type_section"])
+                    with st.expander(label):
                         st.write(chunk["contenu"])
             else:
                 st.error(payload.get("error", "Upload impossible"))
 
         status, payload = request_api("GET", "/cv/me")
-        if status == 200 and payload.get("cv"):
-            st.divider()
-            st.subheader("CV deja enregistre")
-            for chunk in payload["cv"]["chunks"]:
-                with st.expander(chunk["type_section"]):
-                    st.write(chunk["contenu"])
+        if status == 200:
+            cvs = payload.get("cvs", [])
+            selected_cv = payload.get("cv_selectionne")
+            if not cvs:
+                st.info("Aucun CV enregistre pour le moment.")
+            else:
+                st.divider()
+                st.subheader("CV enregistres")
+                if selected_cv:
+                    st.success(f"CV utilise pour les candidatures : {selected_cv['filename']}")
+
+                for cv in cvs:
+                    selected = cv.get("est_selectionne") == "oui"
+                    title = cv["filename"]
+                    if selected:
+                        title = f"{title} - selectionne"
+
+                    st.write(f"**{title}**")
+                    left, right = st.columns(2)
+                    with left:
+                        if not selected and st.button("Utiliser pour mes candidatures", key=f"select_cv_{cv['id']}"):
+                            api_status, api_payload = request_api("POST", f"/cv/{cv['id']}/select")
+                            if api_status == 200:
+                                st.success("CV selectionne.")
+                                st.rerun()
+                            else:
+                                st.error(api_payload.get("error", "Selection impossible"))
+                    with right:
+                        if st.button("Supprimer cette extraction", key=f"delete_cv_{cv['id']}"):
+                            api_status, api_payload = request_api("DELETE", f"/cv/{cv['id']}")
+                            if api_status == 200:
+                                st.success("CV supprime.")
+                                st.rerun()
+                            else:
+                                st.error(api_payload.get("error", "Suppression impossible"))
+
+                    for chunk in cv["chunks"]:
+                        label = cv_expander_label(cv["filename"], chunk["type_section"])
+                        with st.expander(label):
+                            st.write(chunk["contenu"])
+        else:
+            st.error(payload.get("error", "Impossible de charger les CV"))
 
     with offers_tab:
         st.subheader("Offres recommandees")
