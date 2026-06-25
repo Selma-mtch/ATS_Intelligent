@@ -3,6 +3,7 @@ from flask import Blueprint, current_app, jsonify, request
 from controllers.middleware import login_required, recruiter_required
 from database import get_db
 from services.offre_service import OffreService
+from services.matching_service import MatchingService
 
 
 offre_bp = Blueprint("offre", __name__, url_prefix="/offres")
@@ -46,5 +47,23 @@ def list_my_offres(current_user):
     try:
         offres = OffreService(db).list_mes_offres(recruteur_id)
         return jsonify({"offres": offres})
+    finally:
+        db.close()
+
+@offre_bp.route("/<int:offer_id>/candidates", methods=["GET"])
+@recruiter_required
+def get_candidates_for_job(current_user, offer_id):
+    """Classe tous les candidats de la plateforme pour une offre spécifique."""
+    db = get_db()
+    try:
+        from models import Offre
+        offer = db.get(Offre, offer_id)
+        if not offer or not offer.embedding_ref:
+            return jsonify({"error": "Offre introuvable ou non vectorisée"}), 404
+            
+        matcher = MatchingService(db)
+        ranked_candidates = matcher.get_candidates_for_offer(offer.embedding_ref)
+        
+        return jsonify({"candidates": ranked_candidates}), 200
     finally:
         db.close()

@@ -3,6 +3,7 @@ from flask import Blueprint, current_app, jsonify, request
 from controllers.middleware import login_required
 from database import get_db
 from services.cv_service import CVService
+from services.matching_service import MatchingService
 
 
 cv_bp = Blueprint("cv", __name__, url_prefix="/cv")
@@ -56,3 +57,20 @@ def get_my_cv(current_user):
             ],
         }
     })
+
+@cv_bp.route("/matching-offers", methods=["GET"])
+@login_required
+def get_my_matching_offers(current_user):
+    """Trouve les offres adaptées au CV du candidat connecté."""
+    db = get_db()
+    try:
+        # On vérifie si le candidat a un CV
+        if not current_user.cv:
+            return jsonify({"error": "Veuillez d'abord uploader votre CV au format PDF"}), 400
+            
+        matcher = MatchingService(db)
+        recommendations = matcher.get_recommended_offers(current_user.cv.chunks)
+        
+        return jsonify({"offres": recommendations}), 200
+    finally:
+        db.close()

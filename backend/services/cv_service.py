@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 
 from config import MAX_CV_SIZE_MB, UPLOAD_FOLDER
 from models import CV, Candidat, Chunk
+from services.vector_service import VectorService
 
 
 # Quelques titres courants qu'on retrouve dans les CV.
@@ -23,6 +24,7 @@ SECTION_TITLES = {
 class CVService:
     def __init__(self, db):
         self.db = db
+        self.vector_service = VectorService()
 
     def upload_cv(self, candidat_id, uploaded_file):
         self._check_pdf(uploaded_file)
@@ -52,10 +54,22 @@ class CVService:
             texte_extrait=text,
         )
         self.db.add(cv)
-        self.db.flush()
+        self.db.flush() 
 
+        saved_chunks_info = []
         for section_type, content in chunks:
-            self.db.add(Chunk(cv_id=cv.id, type_section=section_type, contenu=content))
+            # On crée d'abord l'objet en BDD pour obtenir un ID unique de Chunk
+            db_chunk = Chunk(cv_id=cv.id, type_section=section_type, contenu=content)
+            self.db.add(db_chunk)
+            self.db.flush() # Donne un ID à db_chunk 
+
+            # On vectorise le texte et on l'ajoute à FAISS avec cet ID unique
+            ref = self.vector_service.add_text_to_index(content, db_chunk.id)
+
+            # On met à jour la colonne embedding_ref avec la référence obtenue
+            db_chunk.embedding_ref = ref
+            
+            saved_chunks_info.append({"type_section": section_type, "contenu": content})
 
         self.db.commit()
 
@@ -63,10 +77,7 @@ class CVService:
             "cv_id": cv.id,
             "filename": pdf_path.name,
             "taille_texte": len(text),
-            "chunks": [
-                {"type_section": section_type, "contenu": content}
-                for section_type, content in chunks
-            ],
+            "chunks": saved_chunks_info,
         }
 
     def _check_pdf(self, uploaded_file):
