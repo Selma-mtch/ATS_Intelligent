@@ -1,3 +1,4 @@
+from sqlalchemy import JSON
 from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -82,7 +83,7 @@ class CV(Base):
 
 
 class Chunk(Base):
-    __tablename__ = "chunks"
+    __tablename__ = "cv_chunks"
 
     id = Column(Integer, primary_key=True)
     cv_id = Column(Integer, ForeignKey("cvs.id"), nullable=False)
