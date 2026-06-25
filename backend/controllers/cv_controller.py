@@ -37,22 +37,51 @@ def upload_cv(current_user):
 def get_my_cv(current_user):
     if current_user.role != "candidat":
         return jsonify({"error": "Seul un candidat peut consulter son CV"}), 403
-    if not current_user.candidat or not current_user.candidat.cv:
-        return jsonify({"cv": None})
+    if not current_user.candidat:
+        return jsonify({"cvs": [], "cv_selectionne": None})
 
-    cv = current_user.candidat.cv
-    return jsonify({
-        "cv": {
-            "id": cv.id,
-            "fichier_pdf": cv.fichier_pdf,
-            "texte_extrait": cv.texte_extrait,
-            "chunks": [
-                {
-                    "id": chunk.id,
-                    "type_section": chunk.type_section,
-                    "contenu": chunk.contenu,
-                }
-                for chunk in cv.chunks
-            ],
-        }
-    })
+    db = get_db()
+    try:
+        cvs = CVService(db).list_cvs(current_user.candidat.id)
+        selected_cv = next((cv for cv in cvs if cv["est_selectionne"] == "oui"), None)
+        return jsonify({"cvs": cvs, "cv_selectionne": selected_cv, "cv": selected_cv})
+    finally:
+        db.close()
+
+
+@cv_bp.route("/<int:cv_id>/select", methods=["POST"])
+@login_required
+def select_cv(current_user, cv_id):
+    if current_user.role != "candidat":
+        return jsonify({"error": "Seul un candidat peut selectionner un CV"}), 403
+    if not current_user.candidat:
+        return jsonify({"error": "Profil candidat introuvable"}), 400
+
+    db = get_db()
+    try:
+        cv = CVService(db).select_cv(current_user.candidat.id, cv_id)
+        return jsonify({"cv": cv})
+    except ValueError as error:
+        db.rollback()
+        return jsonify({"error": str(error)}), 400
+    finally:
+        db.close()
+
+
+@cv_bp.route("/<int:cv_id>", methods=["DELETE"])
+@login_required
+def delete_cv(current_user, cv_id):
+    if current_user.role != "candidat":
+        return jsonify({"error": "Seul un candidat peut supprimer un CV"}), 403
+    if not current_user.candidat:
+        return jsonify({"error": "Profil candidat introuvable"}), 400
+
+    db = get_db()
+    try:
+        CVService(db).delete_cv(current_user.candidat.id, cv_id)
+        return jsonify({"message": "CV supprime"})
+    except ValueError as error:
+        db.rollback()
+        return jsonify({"error": str(error)}), 400
+    finally:
+        db.close()
