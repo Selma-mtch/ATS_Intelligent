@@ -1,6 +1,6 @@
 from sqlalchemy import JSON
 from datetime import datetime, timezone
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -116,6 +116,9 @@ class Offre(Base):
 
 class Candidature(Base):
     __tablename__ = "candidatures"
+    __table_args__ = (
+        UniqueConstraint("candidat_id", "offre_id", name="uq_candidature_candidat_offre"),
+    )
 
     id = Column(Integer, primary_key=True)
     candidat_id = Column(Integer, ForeignKey("candidats.id"), nullable=False)

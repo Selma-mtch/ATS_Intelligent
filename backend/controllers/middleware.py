@@ -59,7 +59,7 @@ def recruiter_required(view):
             if not user:
                 session.clear()
                 return jsonify({"error": "Session invalide"}), 401
-            if user.role != ROLE_RECRUTEUR or not user.recruteur:
+            if user.role not in (ROLE_RECRUTEUR, ROLE_ADMINISTRATEUR) or not user.recruteur:
                 return jsonify({"error": "Droits recruteur requis"}), 403
             return view(user, *args, **kwargs)
         finally:
