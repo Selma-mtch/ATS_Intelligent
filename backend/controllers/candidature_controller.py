@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+
 from controllers.middleware import login_required, recruiter_required
 from database import get_db
 from services.candidature_service import CandidatureService
@@ -51,6 +52,21 @@ def candidatures_par_offre(current_user, offre_id):
         db.close()
 
 
+@candidature_bp.route("/offre/<int:offre_id>/stats", methods=["GET"])
+@recruiter_required
+def stats_par_offre(current_user, offre_id):
+    db = get_db()
+    try:
+        stats = CandidatureService(db).stats_by_offre(current_user, offre_id)
+        return jsonify({"stats": stats})
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 404
+    except PermissionError as error:
+        return jsonify({"error": str(error)}), 403
+    finally:
+        db.close()
+
+
 @candidature_bp.route("/<int:candidature_id>/statut", methods=["PUT"])
 @recruiter_required
 def update_statut(current_user, candidature_id):
@@ -70,16 +86,16 @@ def update_statut(current_user, candidature_id):
         db.close()
 
 
-@candidature_bp.route("/offre/<int:offre_id>/stats", methods=["GET"])
+@candidature_bp.route("/<int:candidature_id>/cv", methods=["GET"])
 @recruiter_required
-def stats_par_offre(current_user, offre_id):
+def cv_candidature(current_user, candidature_id):
     db = get_db()
     try:
-        stats = CandidatureService(db).stats_by_offre(current_user, offre_id)
-        return jsonify({"stats": stats})
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 404
+        cv = CandidatureService(db).get_cv_for_recruiter(current_user, candidature_id)
+        return jsonify({"cv": cv})
     except PermissionError as error:
         return jsonify({"error": str(error)}), 403
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 404
     finally:
         db.close()

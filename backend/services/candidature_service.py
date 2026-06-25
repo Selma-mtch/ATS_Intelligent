@@ -1,11 +1,13 @@
 from repositories.candidature_repository import CandidatureRepository
+from utils import cv_to_dict
 
 
 def _cv_summary(candidat):
-    """Retourne les infos CV du candidat si disponible."""
-    if not candidat or not candidat.cv:
+    """Retourne les infos du CV selectionne du candidat si disponible."""
+    cvs = candidat.cvs if candidat else []
+    if not cvs:
         return None
-    cv = candidat.cv
+    cv = next((c for c in cvs if c.est_selectionne == "oui"), cvs[0])
     return {
         "id": cv.id,
         "fichier_pdf": cv.fichier_pdf,
@@ -35,6 +37,8 @@ def candidature_to_dict(c, include_cv=False):
 
 
 class CandidatureService:
+    STATUTS_VALIDES = ["deposee", "vue", "entretien", "acceptee", "refusee"]
+
     def __init__(self, db):
         self.db = db
         self.repo = CandidatureRepository(db)
@@ -74,12 +78,12 @@ class CandidatureService:
             for c in self.repo.list_by_offre(offre_id)
         ]
 
-    STATUTS_VALIDES = ["deposee", "vue", "entretien", "acceptee", "refusee"]
-
     def update_statut(self, user, candidature_id: int, nouveau_statut: str):
         nouveau_statut = (nouveau_statut or "").strip().lower()
         if nouveau_statut not in self.STATUTS_VALIDES:
-            raise ValueError(f"Statut invalide. Valeurs acceptees : {', '.join(self.STATUTS_VALIDES)}")
+            raise ValueError(
+                f"Statut invalide. Valeurs acceptees : {', '.join(self.STATUTS_VALIDES)}"
+            )
 
         candidature = self.repo.find_by_id(candidature_id)
         if not candidature:
@@ -106,3 +110,19 @@ class CandidatureService:
             if c.statut in counts:
                 counts[c.statut] += 1
         return {"total": len(candidatures), "par_statut": counts}
+
+    def get_cv_for_recruiter(self, user, candidature_id: int):
+        candidature = self.repo.find_by_id(candidature_id)
+        if not candidature:
+            raise ValueError("Candidature introuvable")
+
+        offre = self.repo.find_offre(candidature.offre_id)
+        if not user.recruteur or offre.recruteur_id != user.recruteur.id:
+            raise PermissionError("Action non autorisee")
+
+        candidat = candidature.candidat
+        cvs = candidat.cvs if candidat else []
+        if not cvs:
+            return None
+        cv = next((c for c in cvs if c.est_selectionne == "oui"), cvs[0])
+        return cv_to_dict(cv)

@@ -232,6 +232,14 @@ def candidate_dashboard(user):
                     st.write(offre["description"])
                     if offre.get("competences"):
                         st.caption(f"Competences : {offre['competences']}")
+                    if st.button("Postuler", key=f"postuler_{offre['id']}", use_container_width=True):
+                        ap_status, ap_payload = request_api(
+                            "POST", "/candidatures", json={"offre_id": offre["id"]}
+                        )
+                        if ap_status == 201:
+                            st.success("Candidature envoyee.")
+                        else:
+                            st.error(ap_payload.get("error", "Candidature impossible"))
         else:
             st.error(payload.get("error", "Impossible de charger les offres"))
         st.divider()
@@ -239,7 +247,17 @@ def candidate_dashboard(user):
 
     with applications_tab:
         st.subheader("Mes candidatures")
-        st.info("La candidature en un clic sera ajoutée avec la gestion des offres.")
+        status, payload = request_api("GET", "/candidatures")
+        if status == 200:
+            candidatures = payload.get("candidatures", [])
+            if not candidatures:
+                st.info("Vous n'avez pas encore postule a une offre.")
+            for candidature in candidatures:
+                with st.container(border=True):
+                    st.markdown(f"**{candidature.get('offre_titre') or 'Offre'}**")
+                    st.caption(f"Statut : {candidature['statut']}")
+        else:
+            st.error(payload.get("error", "Impossible de charger vos candidatures"))
 
     with recruiter_request_tab:
         st.subheader("Demande d'évolution vers compte recruteur")
@@ -282,8 +300,25 @@ def candidate_dashboard(user):
         st.info("Le copilote LLM sera branche apres le module IA.")
 
 
+@st.dialog("CV du candidat", width="large")
+def afficher_cv_dialog(candidature_id):
+    cv_status, cv_payload = request_api("GET", f"/candidatures/{candidature_id}/cv")
+    if cv_status == 200 and cv_payload.get("cv"):
+        for chunk in cv_payload["cv"]["chunks"]:
+            st.markdown(f"**{chunk['type_section']}**")
+            st.write(chunk["contenu"])
+    elif cv_status == 200:
+        st.info("Ce candidat n'a pas encore depose de CV.")
+    else:
+        st.error(cv_payload.get("error", "CV indisponible"))
+
+
 def recruiter_dashboard(user):
     dashboard_header(user)
+
+    feedback = st.session_state.pop("candidature_feedback", None)
+    if feedback:
+        st.toast(feedback)
 
     offers_tab, search_tab, matching_tab, chatbot_tab = st.tabs(
         ["Offres", "Recherche", "Matching", "Copilote"]
@@ -340,6 +375,73 @@ def recruiter_dashboard(user):
                     if offre.get("description_entreprise"):
                         st.write(f"**Entreprise** : {offre['description_entreprise']}")
                     st.write(f"**Missions** : {offre.get('description') or '-'}")
+
+                    st.divider()
+                    st.markdown("**Candidatures reçues**")
+                    cand_status, cand_payload = request_api(
+                        "GET", f"/candidatures/offre/{offre['id']}"
+                    )
+                    if cand_status == 200:
+                        candidatures = cand_payload.get("candidatures", [])
+                        if not candidatures:
+                            st.caption("Aucune candidature pour le moment.")
+                        statut_affichage = {
+                            "deposee": ":grey[En attente]",
+                            "acceptee": ":green[Acceptée]",
+                            "refusee": ":red[Refusée]",
+                        }
+                        for candidature in candidatures:
+                            statut = candidature["statut"]
+                            nom = candidature.get("candidat_nom") or "Le candidat"
+                            st.markdown(
+                                f"**{nom}** ({candidature.get('candidat_email') or '-'}) — "
+                                f"{statut_affichage.get(statut, statut)}"
+                            )
+                            col_cv, col_acc, col_ref = st.columns(3)
+                            if col_cv.button(
+                                "Voir le CV",
+                                key=f"cv_{candidature['id']}",
+                                use_container_width=True,
+                            ):
+                                afficher_cv_dialog(candidature["id"])
+                            if col_acc.button(
+                                "Accepter",
+                                key=f"acc_{candidature['id']}",
+                                use_container_width=True,
+                                type="primary",
+                                disabled=(statut == "acceptee"),
+                            ):
+                                r_status, r_payload = request_api(
+                                    "PUT",
+                                    f"/candidatures/{candidature['id']}/statut",
+                                    json={"statut": "acceptee"},
+                                )
+                                if r_status == 200:
+                                    st.session_state["candidature_feedback"] = f"{nom} accepté(e)"
+                                else:
+                                    st.session_state["candidature_feedback"] = r_payload.get("error", "Erreur")
+                                st.rerun()
+                            if col_ref.button(
+                                "Refuser",
+                                key=f"ref_{candidature['id']}",
+                                use_container_width=True,
+                                disabled=(statut == "refusee"),
+                            ):
+                                r_status, r_payload = request_api(
+                                    "PUT",
+                                    f"/candidatures/{candidature['id']}/statut",
+                                    json={"statut": "refusee"},
+                                )
+                                if r_status == 200:
+                                    st.session_state["candidature_feedback"] = f"{nom} refusé(e)"
+                                else:
+                                    st.session_state["candidature_feedback"] = r_payload.get("error", "Erreur")
+                                st.rerun()
+                            st.divider()
+                    else:
+                        st.caption(
+                            cand_payload.get("error", "Impossible de charger les candidatures")
+                        )
         else:
             st.error(payload.get("error", "Impossible de charger les offres"))
 
