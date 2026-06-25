@@ -32,26 +32,26 @@ def migrate_sqlite_schema():
     inspector = inspect(engine)
     table_names = inspector.get_table_names()
     statements = []
-    
+
     if "users" in table_names:
         columns = {column["name"] for column in inspector.get_columns("users")}
 
-      if "demande_role_recruteur" not in columns:
-          statements.append(
-              "ALTER TABLE users ADD COLUMN demande_role_recruteur VARCHAR(10) NOT NULL DEFAULT 'non'"
-          )
-      if "statut_demande_recruteur" not in columns:
-          statements.append(
-              "ALTER TABLE users ADD COLUMN statut_demande_recruteur VARCHAR(30) NOT NULL DEFAULT 'aucune'"
-          )
-      if "entreprise_demande_recruteur" not in columns:
-          statements.append(
-              "ALTER TABLE users ADD COLUMN entreprise_demande_recruteur VARCHAR(160)"
-          )
-      if "referent_rh_demande_recruteur" not in columns:
-          statements.append(
-              "ALTER TABLE users ADD COLUMN referent_rh_demande_recruteur VARCHAR(160)"
-          )
+        if "demande_role_recruteur" not in columns:
+            statements.append(
+                "ALTER TABLE users ADD COLUMN demande_role_recruteur VARCHAR(10) NOT NULL DEFAULT 'non'"
+            )
+        if "statut_demande_recruteur" not in columns:
+            statements.append(
+                "ALTER TABLE users ADD COLUMN statut_demande_recruteur VARCHAR(30) NOT NULL DEFAULT 'aucune'"
+            )
+        if "entreprise_demande_recruteur" not in columns:
+            statements.append(
+                "ALTER TABLE users ADD COLUMN entreprise_demande_recruteur VARCHAR(160)"
+            )
+        if "referent_rh_demande_recruteur" not in columns:
+            statements.append(
+                "ALTER TABLE users ADD COLUMN referent_rh_demande_recruteur VARCHAR(160)"
+            )
 
     if "offres" in table_names:
         offre_columns = {column["name"] for column in inspector.get_columns("offres")}

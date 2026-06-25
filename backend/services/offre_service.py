@@ -45,3 +45,6 @@ class OffreService:
 
     def list_mes_offres(self, recruteur_id: int):
         return [offre_to_dict(offre) for offre in self.offres.list_by_recruteur(recruteur_id)]
+
+    def list_offres(self):
+        return [offre_to_dict(offre) for offre in self.offres.list_all()]

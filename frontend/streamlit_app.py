@@ -164,8 +164,35 @@ def candidate_dashboard(user):
                     st.write(chunk["contenu"])
 
     with offers_tab:
-        st.subheader("Offres recommandees")
-        st.info("Le matching CV vers offres sera ajoute après les embeddings.")
+        st.subheader("Offres disponibles")
+        status, payload = request_api("GET", "/offres")
+        if status == 200:
+            offres = payload.get("offres", [])
+            if not offres:
+                st.info("Aucune offre disponible pour le moment.")
+            for offre in offres:
+                with st.container(border=True):
+                    st.markdown(f"**{offre['titre']}**")
+                    meta = " · ".join(
+                        valeur
+                        for valeur in [
+                            offre.get("domaine"),
+                            offre.get("type_contrat"),
+                            offre.get("duree_contrat"),
+                        ]
+                        if valeur
+                    )
+                    if meta:
+                        st.caption(meta)
+                    if offre.get("description_entreprise"):
+                        st.write(offre["description_entreprise"])
+                    st.write(offre["description"])
+                    if offre.get("competences"):
+                        st.caption(f"Competences : {offre['competences']}")
+        else:
+            st.error(payload.get("error", "Impossible de charger les offres"))
+        st.divider()
+        st.caption("Le matching CV vers offres sera ajoute après les embeddings.")
 
     with applications_tab:
         st.subheader("Mes candidatures")

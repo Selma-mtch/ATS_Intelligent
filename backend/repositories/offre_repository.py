@@ -18,3 +18,6 @@ class OffreRepository:
             .order_by(Offre.date_publication.desc())
             .all()
         )
+
+    def list_all(self):
+        return self.db.query(Offre).order_by(Offre.date_publication.desc()).all()
