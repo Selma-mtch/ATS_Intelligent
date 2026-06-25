@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, jsonify, request
 
-from controllers.middleware import recruiter_required
+from controllers.middleware import login_required, recruiter_required
 from database import get_db
 from services.offre_service import OffreService
 
@@ -24,6 +24,16 @@ def create_offre(current_user):
         current_app.logger.exception("Erreur inattendue pendant la creation d'offre")
         db.rollback()
         return jsonify({"error": "Erreur pendant la creation de l'offre"}), 500
+    finally:
+        db.close()
+
+
+@offre_bp.route("", methods=["GET"])
+@login_required
+def list_offres(current_user):
+    db = get_db()
+    try:
+        return jsonify({"offres": OffreService(db).list_offres()})
     finally:
         db.close()
 
