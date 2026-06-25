@@ -59,7 +59,9 @@ class CandidatureService:
         if not candidature.offre or candidature.offre.recruteur_id != recruteur_id:
             raise PermissionError("Cette candidature ne concerne pas vos offres")
 
-        cv = candidature.candidat.cv if candidature.candidat else None
-        if not cv:
+        candidat = candidature.candidat
+        cvs = candidat.cvs if candidat else []
+        if not cvs:
             return None
+        cv = next((c for c in cvs if c.est_selectionne == "oui"), cvs[0])
         return cv_to_dict(cv)

@@ -300,6 +300,19 @@ def candidate_dashboard(user):
         st.info("Le copilote LLM sera branche apres le module IA.")
 
 
+@st.dialog("CV du candidat", width="large")
+def afficher_cv_dialog(candidature_id):
+    cv_status, cv_payload = request_api("GET", f"/candidatures/{candidature_id}/cv")
+    if cv_status == 200 and cv_payload.get("cv"):
+        for chunk in cv_payload["cv"]["chunks"]:
+            st.markdown(f"**{chunk['type_section']}**")
+            st.write(chunk["contenu"])
+    elif cv_status == 200:
+        st.info("Ce candidat n'a pas encore depose de CV.")
+    else:
+        st.error(cv_payload.get("error", "CV indisponible"))
+
+
 def recruiter_dashboard(user):
     dashboard_header(user)
 
@@ -385,18 +398,12 @@ def recruiter_dashboard(user):
                                 f"{statut_affichage.get(statut, statut)}"
                             )
                             col_cv, col_acc, col_ref = st.columns(3)
-                            with col_cv.popover("Voir le CV", use_container_width=True):
-                                cv_status, cv_payload = request_api(
-                                    "GET", f"/candidatures/{candidature['id']}/cv"
-                                )
-                                if cv_status == 200 and cv_payload.get("cv"):
-                                    for chunk in cv_payload["cv"]["chunks"]:
-                                        st.markdown(f"**{chunk['type_section']}**")
-                                        st.write(chunk["contenu"])
-                                elif cv_status == 200:
-                                    st.caption("Ce candidat n'a pas encore depose de CV.")
-                                else:
-                                    st.caption(cv_payload.get("error", "CV indisponible"))
+                            if col_cv.button(
+                                "Voir le CV",
+                                key=f"cv_{candidature['id']}",
+                                use_container_width=True,
+                            ):
+                                afficher_cv_dialog(candidature["id"])
                             if col_acc.button(
                                 "Accepter",
                                 key=f"acc_{candidature['id']}",
