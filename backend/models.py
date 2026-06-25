@@ -45,7 +45,7 @@ class Candidat(Base):
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
 
     utilisateur = relationship("User", back_populates="candidat")
-    cv = relationship("CV", back_populates="candidat", uselist=False, cascade="all, delete-orphan")
+    cvs = relationship("CV", back_populates="candidat", cascade="all, delete-orphan")
     candidatures = relationship("Candidature", back_populates="candidat", cascade="all, delete-orphan")
 
 
@@ -74,11 +74,13 @@ class CV(Base):
 
     id = Column(Integer, primary_key=True)
     candidat_id = Column(Integer, ForeignKey("candidats.id"), nullable=False)
+    nom_fichier = Column(String(255), nullable=True)
     fichier_pdf = Column(String(255), nullable=False)
     texte_extrait = Column(Text, nullable=True)
+    est_selectionne = Column(String(10), nullable=False, default="non")
     date_upload = Column(DateTime, default=now_utc)
 
-    candidat = relationship("Candidat", back_populates="cv")
+    candidat = relationship("Candidat", back_populates="cvs")
     chunks = relationship("Chunk", back_populates="cv", cascade="all, delete-orphan")
 
 

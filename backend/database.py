@@ -64,6 +64,13 @@ def migrate_sqlite_schema():
             if column_name not in offre_columns:
                 statements.append(ddl)
 
+    if "cvs" in table_names:
+        cv_columns = {column["name"] for column in inspector.get_columns("cvs")}
+        if "nom_fichier" not in cv_columns:
+            statements.append("ALTER TABLE cvs ADD COLUMN nom_fichier VARCHAR(255)")
+        if "est_selectionne" not in cv_columns:
+            statements.append("ALTER TABLE cvs ADD COLUMN est_selectionne VARCHAR(10) NOT NULL DEFAULT 'non'")
+
     if not statements:
         return
 
