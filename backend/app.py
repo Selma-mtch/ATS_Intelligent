@@ -16,9 +16,9 @@ def create_app():
     CORS(app, supports_credentials=True)
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(candidature_bp)
     app.register_blueprint(cv_bp)
     app.register_blueprint(offre_bp)
-    app.register_blueprint(candidature_bp)
 
     @app.route("/")
     def health():

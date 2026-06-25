@@ -247,7 +247,7 @@ def candidate_dashboard(user):
 
     with applications_tab:
         st.subheader("Mes candidatures")
-        status, payload = request_api("GET", "/candidatures/mine")
+        status, payload = request_api("GET", "/candidatures")
         if status == 200:
             candidatures = payload.get("candidatures", [])
             if not candidatures:
@@ -412,7 +412,7 @@ def recruiter_dashboard(user):
                                 disabled=(statut == "acceptee"),
                             ):
                                 r_status, r_payload = request_api(
-                                    "POST",
+                                    "PUT",
                                     f"/candidatures/{candidature['id']}/statut",
                                     json={"statut": "acceptee"},
                                 )
@@ -428,7 +428,7 @@ def recruiter_dashboard(user):
                                 disabled=(statut == "refusee"),
                             ):
                                 r_status, r_payload = request_api(
-                                    "POST",
+                                    "PUT",
                                     f"/candidatures/{candidature['id']}/statut",
                                     json={"statut": "refusee"},
                                 )
